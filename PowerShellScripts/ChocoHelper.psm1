@@ -933,8 +933,8 @@ function Install-ChocoHelper {
         Write-LogFileMessage -Message "Starting ChocoHelper installation" -Level "INFO"
         
         # Define source URL and target paths
-        $sourceUrl = "https://raw.githubusercontent.com/SYNTHETIXMIND/pubrepo/main/PowerShellScripts/P5-ChocoHelper.psm1"
-        $scriptFileName = "P5-ChocoHelper.psm1"
+        $sourceUrl = "https://raw.githubusercontent.com/SYNTHETIXMIND/pubrepo/refs/heads/main/PowerShellScripts/ChocoHelper.psm1"
+        $scriptFileName = "ChocoHelper.psm1"
         
         $installPaths = @{
             PowerShell5 = @("C:\Program Files\WindowsPowerShell\Modules\")
