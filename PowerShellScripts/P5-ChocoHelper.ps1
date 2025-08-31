@@ -1,12 +1,12 @@
 <#PSScriptInfo
-.VERSION 0.0.3.0
+.VERSION 0.1.0.0
 .GUID b8f3c4a7-9d2e-4f1b-8c5a-7e6d9f0b3c2a
-.AUTHOR Thomas Dobler - thomas.dobler@it-onbase.ch - IT-onBase AG
-.COMPANYNAME IT-onBase AG
-.COPYRIGHT (C) 2025 by IT-onBase AG - All rights reserved
+.AUTHOR Thomas Dobler - tom@synthetixmind.com - SYNTHETIXMIND LTD
+.COMPANYNAME SYNTHETIXMIND LTD
+.COPYRIGHT (C) 2025 by SYNTHETIXMIND LTD - All rights reserved
 .TAGS Chocolatey, PackageManagement, SoftwareInstallation, Automation
-.LICENSEURI 
-.PROJECTURI 
+.LICENSEURI https://synthetixmind.com
+.PROJECTURI https://synthetixmind.com
 .ICONURI 
 .EXTERNALMODULEDEPENDENCIES 
 .REQUIREDSCRIPTS 
@@ -20,6 +20,7 @@ Version     |Type      |Date (Y/M/D)   |User                |Note
 0.0.2.0     |Build     |2025/08/30     |Thomas Dobler       |Added Show-ChocoHelp function and automatic help display when script is run directly without dot-sourcing
 0.0.2.1     |Revision  |2025/08/30     |Thomas Dobler       |Fixed chocolatey list command from --local-only to lo parameter in Get-ChocoInstalledPackages function
 0.0.3.0     |Build     |2025/08/30     |Thomas Dobler       |Enhanced Update-ChocoPackages function with -All switch parameter instead of using PackageName 'all', improved parameter validation
+0.1.0.0     |Minor     |2025/08/30     |Thomas Dobler       |Added Install-ChocoHelper function for automatic script deployment to PowerShell module folders, updated author information to SYNTHETIXMIND LTD
 #>
 
 # .FILENAME P5-ChocoHelper.ps1
@@ -908,6 +909,162 @@ function Get-ChocoConfig {
     }
 }
 
+# Install ChocoHelper script to PowerShell module directories
+function Install-ChocoHelper {
+    [CmdletBinding(DefaultParameterSetName = 'Both')]
+    param(
+        [Parameter(Mandatory=$true, ParameterSetName = 'PowerShell5')]
+        [switch]$PowerShell5,
+        
+        [Parameter(Mandatory=$true, ParameterSetName = 'PowerShell7')]
+        [switch]$PowerShell7,
+        
+        [Parameter(Mandatory=$true, ParameterSetName = 'Both')]
+        [switch]$Both = $true
+    )
+    
+    begin {
+        Write-LogFileMessage -Message "Starting ChocoHelper installation" -Level "INFO"
+        
+        # Define source URL and target paths
+        $sourceUrl = "https://raw.githubusercontent.com/SYNTHETIXMIND/pubrepo/main/PowerShellScripts/P5-ChocoHelper.ps1"
+        $scriptFileName = "P5-ChocoHelper.ps1"
+        
+        $installPaths = @{
+            PowerShell5 = @("C:\Program Files\WindowsPowerShell\Modules\")
+            PowerShell7 = @(
+                "C:\Program Files\PowerShell\Modules",
+                "C:\Program Files\PowerShell\7\Modules"
+            )
+        }
+    }
+    
+    process {
+        try {
+            # Check if running with administrative privileges
+            $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+            if (-not $isAdmin) {
+                throw "Administrator rights required to install to PowerShell module directories. Please run as Administrator."
+            }
+            
+            # Download the script content
+            Write-LogFileMessage -Message "Downloading ChocoHelper script from: $sourceUrl" -Level "INFO"
+            try {
+                [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+                $webClient = New-Object System.Net.WebClient
+                $scriptContent = $webClient.DownloadString($sourceUrl)
+                $webClient.Dispose()
+            }
+            catch {
+                throw "Failed to download script from GitHub: $($_.Exception.Message)"
+            }
+            
+            if ([string]::IsNullOrEmpty($scriptContent)) {
+                throw "Downloaded script content is empty"
+            }
+            
+            $installResults = @()
+            $targetVersions = @()
+            
+            # Determine target versions based on parameters
+            if ($PowerShell5 -or $Both) {
+                $targetVersions += "PowerShell5"
+            }
+            if ($PowerShell7 -or $Both) {
+                $targetVersions += "PowerShell7"
+            }
+            
+            foreach ($version in $targetVersions) {
+                foreach ($basePath in $installPaths[$version]) {
+                    try {
+                        # Check if the base directory exists
+                        if (-not (Test-Path $basePath)) {
+                            Write-LogFileMessage -Message "Directory does not exist, skipping: $basePath" -Level "WARNING"
+                            $installResults += [PSCustomObject]@{
+                                Path = $basePath
+                                Success = $false
+                                Message = "Directory does not exist"
+                                Version = $version
+                            }
+                            continue
+                        }
+                        
+                        # Create ChocoHelper module directory
+                        $moduleDir = Join-Path $basePath "ChocoHelper"
+                        if (-not (Test-Path $moduleDir)) {
+                            New-Item -Path $moduleDir -ItemType Directory -Force | Out-Null
+                            Write-LogFileMessage -Message "Created module directory: $moduleDir" -Level "INFO"
+                        }
+                        
+                        # Save the script file
+                        $scriptPath = Join-Path $moduleDir $scriptFileName
+                        $utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $false
+                        [System.IO.File]::WriteAllText($scriptPath, $scriptContent, $utf8NoBomEncoding)
+                        
+                        # Verify installation
+                        if (Test-Path $scriptPath) {
+                            Write-LogFileMessage -Message "Successfully installed ChocoHelper to: $scriptPath" -Level "INFO"
+                            $installResults += [PSCustomObject]@{
+                                Path = $scriptPath
+                                Success = $true
+                                Message = "Installation successful"
+                                Version = $version
+                                FileSize = (Get-Item $scriptPath).Length
+                            }
+                        } else {
+                            throw "File was not created successfully"
+                        }
+                    }
+                    catch {
+                        Write-LogFileMessage -Message "Failed to install to $basePath`: $($_.Exception.Message)" -Level "ERROR"
+                        $installResults += [PSCustomObject]@{
+                            Path = $basePath
+                            Success = $false
+                            Message = $_.Exception.Message
+                            Version = $version
+                        }
+                    }
+                }
+            }
+            
+            # Create summary result
+            $successCount = ($installResults | Where-Object { $_.Success }).Count
+            $totalCount = $installResults.Count
+            
+            $summary = [PSCustomObject]@{
+                TotalAttempts = $totalCount
+                SuccessfulInstalls = $successCount
+                FailedInstalls = $totalCount - $successCount
+                InstallResults = $installResults
+                SourceUrl = $sourceUrl
+                ScriptFileName = $scriptFileName
+                InstallationComplete = ($successCount -gt 0)
+            }
+            
+            if ($summary.InstallationComplete) {
+                Write-LogFileMessage -Message "ChocoHelper installation completed. $successCount of $totalCount installations successful." -Level "INFO"
+                Write-Host ""
+                Write-Host "ChocoHelper Installation Summary:" -ForegroundColor Green
+                Write-Host "Successfully installed to $successCount of $totalCount locations" -ForegroundColor White
+                Write-Host ""
+                Write-Host "To use ChocoHelper in your PowerShell sessions:" -ForegroundColor Yellow
+                Write-Host "Import-Module ChocoHelper" -ForegroundColor Gray
+                Write-Host "or" -ForegroundColor White
+                Write-Host ". `$((Get-Module ChocoHelper -ListAvailable).Path)" -ForegroundColor Gray
+                Write-Host ""
+            } else {
+                Write-LogFileMessage -Message "ChocoHelper installation failed for all locations" -Level "ERROR"
+            }
+            
+            return $summary
+        }
+        catch {
+            Write-LogFileMessage -Message "Error during ChocoHelper installation: $($_.Exception.Message)" -Level "ERROR"
+            throw
+        }
+    }
+}
+
 # Display help information for all available functions
 function Show-ChocoHelp {
     [CmdletBinding()]
@@ -977,6 +1134,11 @@ function Show-ChocoHelp {
             Name = "Get-ChocoConfig"
             Description = "Get Chocolatey configuration and features"
             Example = "Get-ChocoConfig"
+        },
+        @{
+            Name = "Install-ChocoHelper"
+            Description = "Install ChocoHelper script to PowerShell module directories"
+            Example = "Install-ChocoHelper -Both    # or    Install-ChocoHelper -PowerShell7"
         }
     )
     
@@ -988,6 +1150,9 @@ function Show-ChocoHelp {
     }
     
     Write-Host "QUICK START EXAMPLES:" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "  # 0. Install ChocoHelper to module directories (run as Administrator)" -ForegroundColor Cyan
+    Write-Host "  Install-ChocoHelper -Both" -ForegroundColor Gray
     Write-Host ""
     Write-Host "  # 1. First check if Chocolatey is installed" -ForegroundColor Cyan
     Write-Host "  Test-ChocolateyAvailability" -ForegroundColor Gray
@@ -1009,6 +1174,7 @@ function Show-ChocoHelp {
     Write-Host ""
     Write-Host "=============================================" -ForegroundColor Cyan
     Write-Host "For more information about Chocolatey, visit: https://chocolatey.org" -ForegroundColor White
+    Write-Host "ChocoHelper by SYNTHETIXMIND LTD - https://synthetixmind.com" -ForegroundColor White
     Write-Host "=============================================" -ForegroundColor Cyan
     Write-Host ""
 }
