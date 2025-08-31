@@ -1,5 +1,5 @@
 <#PSScriptInfo
-.VERSION 0.2.1.1
+.VERSION 0.2.1.2
 .GUID b8f3c4a7-9d2e-4f1b-8c5a-7e6d9f0b3c2a
 .AUTHOR Thomas Dobler - tom@synthetixmind.com - SYNTHETIXMIND LTD
 .COMPANYNAME SYNTHETIXMIND LTD
@@ -25,6 +25,7 @@ Version     |Type      |Date (Y/M/D)   |User                |Note
 0.2.0.1     |Revision  |2025/08/30     |Thomas Dobler       |Fixed Export-ModuleMember error by removing auto-help display logic that was interfering with module import process
 0.2.1.0     |Build     |2025/08/30     |Thomas Dobler       |Fixed module naming convention - changed filename from P5-ChocoHelper.psm1 to ChocoHelper.psm1 for proper PowerShell module discovery
 0.2.1.1     |Revision  |2025/08/30     |Thomas Dobler       |Enhanced Install-ChocoHelper function to always force update and replace existing installations with newest version from GitHub
+0.2.1.2     |Revision  |2025/08/30     |Thomas Dobler       |Updated GitHub download URL from P5-ChocoHelper.ps1 to ChocoHelper.psm1 to match current module filename structure
 #>
 
 # .FILENAME ChocoHelper.psm1
