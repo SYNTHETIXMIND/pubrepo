@@ -1,5 +1,5 @@
 <#PSScriptInfo
-.VERSION 0.2.0.0
+.VERSION 0.2.0.1
 .GUID b8f3c4a7-9d2e-4f1b-8c5a-7e6d9f0b3c2a
 .AUTHOR Thomas Dobler - tom@synthetixmind.com - SYNTHETIXMIND LTD
 .COMPANYNAME SYNTHETIXMIND LTD
@@ -22,6 +22,7 @@ Version     |Type      |Date (Y/M/D)   |User                |Note
 0.0.3.0     |Build     |2025/08/30     |Thomas Dobler       |Enhanced Update-ChocoPackages function with -All switch parameter instead of using PackageName 'all', improved parameter validation
 0.1.0.0     |Minor     |2025/08/30     |Thomas Dobler       |Added Install-ChocoHelper function for automatic script deployment to PowerShell module folders, updated author information to SYNTHETIXMIND LTD
 0.2.0.0     |Minor     |2025/08/30     |Thomas Dobler       |Converted script from .ps1 to .psm1 module format for automatic loading, added Export-ModuleMember, updated filename references
+0.2.0.1     |Revision  |2025/08/30     |Thomas Dobler       |Fixed Export-ModuleMember error by removing auto-help display logic that was interfering with module import process
 #>
 
 # .FILENAME P5-ChocoHelper.psm1
@@ -1073,10 +1074,10 @@ function Show-ChocoHelp {
     
     Write-Host ""
     Write-Host "=============================================" -ForegroundColor Cyan
-    Write-Host "       PowerShell Chocolatey Helper" -ForegroundColor Yellow
+    Write-Host "       PowerShell Chocolatey Helper Module" -ForegroundColor Yellow
     Write-Host "=============================================" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "This script provides comprehensive PowerShell functions for Chocolatey package management." -ForegroundColor White
+    Write-Host "This module provides comprehensive PowerShell functions for Chocolatey package management." -ForegroundColor White
     Write-Host ""
     Write-Host "USAGE:" -ForegroundColor Green
     Write-Host "  Import-Module ChocoHelper   # Import the module to load functions" -ForegroundColor Gray
@@ -1177,14 +1178,6 @@ function Show-ChocoHelp {
     Write-Host "For more information about Chocolatey, visit: https://chocolatey.org" -ForegroundColor White
     Write-Host "ChocoHelper by SYNTHETIXMIND LTD - https://synthetixmind.com" -ForegroundColor White
     Write-Host "=============================================" -ForegroundColor Cyan
-    Write-Host ""
-}
-
-# Auto-display help when script is run directly (not dot-sourced)
-if ($MyInvocation.InvocationName -ne '.') {
-    Show-ChocoHelp
-    Write-Host "To load the functions into your current session, run:" -ForegroundColor Yellow
-    Write-Host "Import-Module ChocoHelper" -ForegroundColor Green
     Write-Host ""
 }
 
