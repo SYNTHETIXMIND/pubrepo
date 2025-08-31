@@ -1,5 +1,5 @@
 <#PSScriptInfo
-.VERSION 0.2.1.3
+.VERSION 0.2.2.1
 .GUID b8f3c4a7-9d2e-4f1b-8c5a-7e6d9f0b3c2a
 .AUTHOR Thomas Dobler - tom@synthetixmind.com - SYNTHETIXMIND LTD
 .COMPANYNAME SYNTHETIXMIND LTD
@@ -23,7 +23,7 @@ Version     |Type      |Date (Y/M/D)   |User                |Note
 0.1.0.0     |Minor     |2025/08/30     |Thomas Dobler       |Added Install-ChocoHelper function for automatic script deployment to PowerShell module folders, updated author information to SYNTHETIXMIND LTD
 0.2.0.0     |Minor     |2025/08/30     |Thomas Dobler       |Converted script from .ps1 to .psm1 module format for automatic loading, added Export-ModuleMember, updated filename references
 0.2.0.1     |Revision  |2025/08/30     |Thomas Dobler       |Fixed Export-ModuleMember error by removing auto-help display logic that was interfering with module import process
-0.2.1.0     |Build     |2025/08/30     |Thomas Dobler       |Fixed module naming convention - changed filename from P5-ChocoHelper.psm1 to ChocoHelper.psm1 for proper PowerShell module discovery
+0.2.1.0     |Build     |2025/08/30     |Thomas Dobler       |Fixed module naming convention - changed filename from ChocoHelper.psm1 to ChocoHelper.psm1 for proper PowerShell module discovery
 0.2.1.1     |Revision  |2025/08/30     |Thomas Dobler       |Enhanced Install-ChocoHelper function to always force update and replace existing installations with newest version from GitHub
 0.2.1.2     |Revision  |2025/08/30     |Thomas Dobler       |Updated GitHub download URL from P5-ChocoHelper.ps1 to ChocoHelper.psm1 to match current module filename structure
 0.2.1.3     |Revision  |2025/08/30     |Thomas Dobler       |Fixed GitHub URL format to include refs/heads path component to resolve 404 download errors
@@ -1144,7 +1144,7 @@ function Show-ChocoHelp {
         @{
             Name = "Install-ChocoHelper"
             Description = "Install ChocoHelper script to PowerShell module directories"
-            Example = "Install-ChocoHelper -Both    # or    Install-ChocoHelper -PowerShell7"
+            Example = "Install-ChocoHelper -Both -SelfBootstrap    # First-time bootstrap installation"
         }
     )
     
@@ -1157,8 +1157,8 @@ function Show-ChocoHelp {
     
     Write-Host "QUICK START EXAMPLES:" -ForegroundColor Green
     Write-Host ""
-    Write-Host "  # 0. Install ChocoHelper to module directories (run as Administrator)" -ForegroundColor Cyan
-    Write-Host "  Install-ChocoHelper -Both" -ForegroundColor Gray
+    Write-Host "  # 0. Install ChocoHelper to module directories (first-time setup)" -ForegroundColor Cyan
+    Write-Host "  Install-ChocoHelper -Both -SelfBootstrap" -ForegroundColor Gray
     Write-Host ""
     Write-Host "  # 1. First check if Chocolatey is installed" -ForegroundColor Cyan
     Write-Host "  Test-ChocolateyAvailability" -ForegroundColor Gray
